@@ -43,9 +43,35 @@ int main(void)
     open_file("ab");
     while(get_person(&member))
         fwrite(&member, sizeof(member), 1, global.pfile);
-    printf("1\n");
+
+
+  //  fclose(global.pfile);
+  //  源程序这里是有这一个语句的，但它导致了整个程序map memmery。
+  //  经过实验验证，导致错误的原因是由于取消global.pfile文件指针与文件的并联时，没有
+  //  将指针指向NULL，这是指针就处于一个非NULL的未知值。而恰恰，在程序的open_file语句
+  //  中，有一个
+  //    if(global.pfile)
+  //        close_file();
+  // 这会导致什么呢？
+  // 没错，if条件为true，重新执行关闭已经文件的close_file()函数。然而，指针已经取消与
+  // 文件的并联关系，所以呢，导致内存紊乱。也就是大名鼎鼎的map memery.
+  // 解决方法时什么？
+  //    这里已经很明确了。只要你在关闭文件时，将指针指向NULL，从而if条件文false，就不会
+  //    发生这样的事情啦。
+
+                                /************************************************************************
+                                 * 那么问题又来了，对一个已经指向NULL的指针在一次执行fclose会如何？
+                                 *没有mapmemery，但是又有一个：
+                                 *                              Segmentation fault (核心已转储)
+                                 *         不知是什么鬼。只知道也是内存方面的错误。以后知识够了再解答。
+                                 ************************************************************************/
+
+   /**********************     
     fclose(global.pfile);
-    printf("2\n");
+    global.pfile = NULL;
+    fclose(global.pfile);
+    global.pfile = NULL;
+    *********************/
 
     show_person_date();
 
@@ -65,6 +91,7 @@ bool get_person(Family *temp)
                                 more != '\0' ? "another" : "a");
 
     scanf(" %c",&more);
+    getchar();//eat '\n'
 
     if(tolower(more) == 'n')
             return false;
@@ -75,6 +102,8 @@ bool get_person(Family *temp)
                                         temp -> name);
     scanf(" %d %d %d", &temp -> dob.day, &temp -> dob.month,
                                          &temp -> dob.year);
+
+    getchar();//eat '\n' form scanf()
 
     printf("Who is %s's father? ", temp -> name);
     getname(temp -> pa_name, sizeof(temp -> pa_name));
@@ -87,8 +116,8 @@ bool get_person(Family *temp)
 
 void getname(char *name, size_t size)
 {
-    //fflush(stdin);
-    setbuf(stdin, NULL);
+    //fflush(stdin);没用，在linux上不能清除缓冲区。
+    //setbuf(stdin, NULL);
    // char buf[50];
     //fgets(buf, 50, stdin);
     fgets(name, size, stdin);
@@ -99,20 +128,15 @@ void getname(char *name, size_t size)
 
 void show_person_date(void)
 {   
-    printf("4\n");///////////////////////////////////////////////////////
     Family member;
-    printf("6\n");
     open_file("rb");
-    printf("5\n");
 
     while(fread(&member, sizeof(member), 1, global.pfile)){
         printf("%s's father is %s, and mother is %s.\n",
             member.name, member.pa_name, member.ma_name);
-        printf("6\n");
         get_parent_dob(&member);
     }
     close_file();
-    printf("3\n");//////////////////////////////////////////////////////////
 }
 
 void get_parent_dob(Family *pmember)
@@ -155,15 +179,9 @@ void get_parent_dob(Family *pmember)
 
 void open_file(char *mode)
 {
-    printf("8\n");/////////////////////////
-    if(global.pfile){
-        printf("9\n");////////////////////////////
-        fclose(global.pfile);
-        printf("0\n");
-        global.pfile = NULL;//close_file();
-    }
+    if(global.pfile)
+        close_file();
 
-    printf("7\n");//////////////////////////
     if(!(global.pfile = fopen(global.filename, mode))){
         printf("Unable to open %s with mode %s.\n",global.filename,
                                                             mode);
@@ -174,11 +192,8 @@ void open_file(char *mode)
 
 void close_file(void)
 {
-    printf("10\n");
     fclose(global.pfile);
-    printf("11\n");////////////////
     global.pfile = NULL;
-    printf("12\n");//////////////
 }
 
 
