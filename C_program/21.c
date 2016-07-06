@@ -51,6 +51,7 @@ int main(void)
             case 'A':
                 write_file("ab+");
                 printf("\nfile append complete.\n");
+                break;
             case 'U':
                 update_file();
                 break;
@@ -110,6 +111,8 @@ Record *read_record(Record *precord, FILE *pfile)
     //一样可以用sizeof(precord -> name),1
     //但这样会造成内存浪费
     precord -> name[length] = '\0';
+    // did not write '\0' at the end of "name" array when use 
+    // the fwrite function.so add to here.
     fread(&precord -> age, sizeof(precord -> age), 1, pfile);
 
     return precord;
@@ -140,7 +143,7 @@ void write_file(const char *mode)
 void list_file(void)
 {
     char format[18];
-    sprintf(format, "%%-%ds Age:%%4\n", MAXLEN);
+    sprintf(format, "%%-%ds Age:%%4d\n", MAXLEN);
 
     FILE *pfile = NULL;
     if(!(pfile = fopen(filename, "rb"))){
@@ -179,7 +182,8 @@ void duplicate_file(const Record *pnewrecord, int index, FILE *pfile)
         write_record(read_record(&record, pfile), ptempfile);
 
     write_record(pnewrecord, ptempfile);
-    read_record(&record, pfile);
+    read_record(&record, pfile);//将被更新的record以只读
+    //不写的方式去掉。
 
     while(read_record(&record, pfile))
         write_record(&record, ptempfile);
