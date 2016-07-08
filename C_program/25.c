@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <time.h>
+
+int main(void)
+{
+    const char *day[7] = {
+                    "sunday" , "Monday" , "Tuesday" , "Wednesday",
+                    "Thursday" , "Friday" , "Saturday"
+                         };
+    const char *month[12] = {
+                        "January" , "February" , "March" , "April" , 
+                        "May" , "June" , "July" , "August" , "September" , 
+                        "October" , "November" , "December"
+                            };
+
+    const char *suffix[] = { "st" , "nd" , "rd" , "th"};
+    enum sufindex { st, nd, rd, th} sufsel = th;
+
+    struct tm *ourT;
+
+    time_t tVal = time(NULL);
+
+    if(!(ourT = localtime(&tVal))){
+        fprintf(stderr, "Failed to populate tm struct");
+        return -1;
+    }
+
+    switch(ourT -> tm_mday){
+        case 1: case 21: case 31:
+            sufsel = st;
+            break;
+        case 2: case 22:
+            sufsel = nd;
+            break;
+        case 3:
+            sufsel = rd;
+            break;
+        default :
+            sufsel = th;
+            break;
+    }
+
+    printf("Today is %s the %d%s %s %d .  ", day[ourT -> tm_wday], 
+            ourT -> tm_mday, suffix[sufsel], month[ourT -> tm_mon], 
+            1900 + ourT -> tm_year);
+    printf("The time is %d : %d : %d . \n", ourT -> tm_hour, 
+            ourT -> tm_min, ourT -> tm_sec );
+    /*********************************************************
+     * the sign of the struct pointer is -> not - >
+     *********************************************************/
+
+    return 0;
+
+}
