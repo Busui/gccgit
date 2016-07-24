@@ -1,0 +1,226 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <ctype.h>
+
+typedef struct LinkList LinkList;
+
+typedef struct LinkList{
+    char ch[8];
+    LinkList *previous;
+    LinkList *next;
+}L;
+
+void ClearList(LinkList *p);
+char ListInsert(LinkList *p, int i, int *j);
+bool GetElem(LinkList *p, int i, char **e);
+char ListDelete(LinkList *p, int i, char **e, int *j);
+void InitList(LinkList **p);
+void CreateList(LinkList *p, int i);
+bool ListEmpty(LinkList *p);
+int ListLength(LinkList *p);
+
+int main(void)
+{
+    int i = 0;
+    int j = 0;
+    char answer = '\0';
+    char *e = NULL;
+    char *ee = NULL;
+    LinkList *L = NULL;
+
+    InitList(&L);
+
+
+    printf("Enter the member number of List you want: ");
+    scanf("%d", &i);
+    getchar();
+    
+    CreateList(L, i);
+    //if(ListEmpty(L))
+      //  printf("LinkList are empty.\n");
+
+    while(true){
+        printf(" Choose from the following options:\n"
+                "To insert some alpha in List enter I\n"
+                "To delete alpha in List enter      D\n"
+                "To get alpha in List enter         G\n"
+                "To end the program enter           Q\n : ");
+        scanf("\n%c", &answer);
+        switch(toupper(answer)){
+            case 'I':
+                printf("Where do you want to insert(1~%d): ", i + 1);
+                scanf(" %d", &j);
+                ListInsert(L, j, &i);
+                break;
+            case 'D':
+                printf("where are you want to delete(1~%d): ", i);
+                scanf(" %d",&j);
+                ListDelete(L, j, &e, &i);
+                printf("You deleted %s\n", e);//this expression could be put in ListDelete() 
+                //which made the procedure more concise but i not do that.
+                break;
+            case 'G':
+                printf("where are you want to get(1~%d)", i);
+                scanf(" %d", &j);
+                if(GetElem(L, j, &ee))
+                    printf("You get: %s\n",ee);
+                else
+                    printf("Meet some error.\n");
+                break;
+            case 'Q':
+                ClearList(L);
+                printf("\nEnding the program.\n");
+                exit(0);
+            default:
+                printf("Invalid selection.Try again.\n");
+                break;
+        }
+    }
+
+
+    return 0;
+
+}
+
+void InitList(LinkList **p)
+{
+    *p = (LinkList*)malloc(sizeof(LinkList));//在函数外值直接使用p -> next 时就会出现Segmentation fault (core dumped)错误.
+    (*p) -> next = NULL;
+    (*p) -> previous = NULL;
+}
+
+void CreateList(LinkList *p, int i)
+{
+    LinkList *current = NULL;
+    LinkList *last = NULL;
+
+    for(int j = 0 ; j < i ; ++j){
+        current = (LinkList*)malloc(sizeof(LinkList));
+
+        if(last == NULL){
+            current -> previous = p;
+            p -> next = current;
+            p -> previous = NULL;//This is important.
+        }
+        else{
+            current -> previous = last;
+            last -> next = current;
+        }
+
+        printf("\nplease enter the NO.%d alpha: ", j+1 );
+        scanf("%s", current -> ch);
+        getchar();
+        
+        last = current;
+        current -> next = NULL;
+    }
+} 
+
+int ListLength(LinkList *p)
+{
+    int i = 0;
+    p = p -> next;
+    while(p){
+        p = p -> next;
+        ++i;
+    }
+    return i;
+}
+
+bool ListEmpty(LinkList *p)
+{
+    if(p -> next == NULL)
+        return true;
+    return false;
+}
+char ListInsert(LinkList *p, int i, int *j)
+{
+    int length = 0;
+    LinkList *s;
+    int m = 1;
+    length = ListLength(p);
+    printf("length = %d\n", length);
+
+    if(i < 0 || i > length + 1)
+        return 1;
+    while(p && m < i){
+         p = p -> next;
+        ++m;
+    }
+    s = (LinkList*)malloc(sizeof(LinkList));
+    printf("What alpha do you want to insert: ");
+    scanf("%s", s -> ch);
+    ++(*j);
+
+    s -> next = p -> next;
+    s -> previous = p;
+    p -> next = s;
+    return 0;
+}
+
+char ListDelete(LinkList *p, int i, char **e, int *j)
+{
+    int length = 0;
+    int m = 1;
+    LinkList *L = NULL;
+    length = ListLength(p);
+
+    if(i < 0 || i > length){
+        printf("You entered too large,Exit.\n");
+        return 1;
+    }
+
+    while(p && m < i){
+        p = p -> next;
+        ++m;
+    }
+
+    if(i < length){
+        L = p -> next;
+        p -> next = L -> next;
+        L -> next -> previous = p;
+    }
+    else{
+        L = p -> next;
+        p -> next = NULL;
+    }
+
+    *e = L -> ch;//because the memery of "L -> ch" is allocated in 
+    // L,when L was freed, ch's content was freed too.How to solve
+    // this problem? allocating memery for "ch" independently.
+    free(L);
+    (*j)--;
+
+    return 0;
+}
+
+bool GetElem(LinkList *p, int i, char **e)
+{
+    LinkList *pL = NULL;
+    pL = p -> next;
+    int m = 1;
+    while(pL && m < i){
+        pL = pL -> next;
+        ++m;
+    }
+    if( !pL || m > i)
+        return false;
+    *e = pL -> ch;
+
+    return true;
+
+}
+
+void ClearList(LinkList *p)
+{
+    LinkList *pL,*q;
+    pL = p;
+    while(pL){
+        q = pL -> next;
+        free(pL);
+        pL = q;
+    }
+    p = NULL;
+    printf("Clear list successfully.");
+}

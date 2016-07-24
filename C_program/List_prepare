@@ -1,0 +1,32 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void delivery(char **);
+void allocation(char**);
+void print(char*);
+
+int main(void)
+{
+    char *p;
+    allocation(&p);
+    delivery(&p);
+    printf("the address of p in main: %p.\n", p);
+    print(p);
+    return 0;
+}
+
+void delivery(char **p)
+{
+    *p = "aaaaaaaa";
+}
+
+void allocation(char **p)
+{
+    *p = (char*)malloc(10*sizeof(char));
+}
+
+void print(char*p)
+{
+    printf("The address of p in print: %p\n", p);
+    printf("%s", p);
+}
